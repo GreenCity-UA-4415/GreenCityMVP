@@ -52,8 +52,15 @@ public class HabitFactServiceImpl implements HabitFactService {
      */
     @Override
     public PageableDto<LanguageTranslationDTO> getAllHabitFacts(Pageable page, String language) {
+        if (page == null) {
+            throw new BadRequestException("Pageable cannot be null");
+        }
+        if (language == null || language.trim().isEmpty()) {
+            throw new BadRequestException("Language code cannot be null or empty");
+        }
+        
         Page<HabitFactTranslation> habitFactTranslation = habitFactTranslationRepo
-            .findAllByLanguageCode(page, language);
+            .findAllByLanguageCode(page, language.trim());
         if (habitFactTranslation.getTotalPages() < page.getPageNumber()) {
             throw new BadRequestException(ErrorMessage.PAGE_INDEX_IS_MORE_THAN_TOTAL_PAGES
                 + habitFactTranslation.getTotalPages());
@@ -73,7 +80,7 @@ public class HabitFactServiceImpl implements HabitFactService {
                 + habitFactTranslation.getTotalPages());
         }
         return habitFactTranslation.stream()
-            .map(habitFact -> modelMapper.map(habitFactTranslation, LanguageTranslationDTO.class))
+            .map(habitFact -> modelMapper.map(habitFact, LanguageTranslationDTO.class))
             .collect(Collectors.toList());
     }
 
@@ -128,13 +135,19 @@ public class HabitFactServiceImpl implements HabitFactService {
      * {@inheritDoc}
      */
     @Override
+    @Transactional
     public HabitFactVO save(HabitFactPostDto fact) {
+        if (fact == null || fact.getHabit() == null || fact.getHabit().getId() == null) {
+            throw new BadRequestException("HabitFactPostDto and habit ID cannot be null");
+        }
         checkIfHabitExists(fact.getHabit().getId());
         HabitFact habitFact = modelMapper.map(fact, HabitFact.class);
-        habitFact.getTranslations().forEach(habitFactTranslation -> {
-            habitFactTranslation.setHabitFact(habitFact);
-            habitFactTranslation.setFactOfDayStatus(FactOfDayStatus.POTENTIAL);
-        });
+        if (habitFact.getTranslations() != null) {
+            habitFact.getTranslations().forEach(habitFactTranslation -> {
+                habitFactTranslation.setHabitFact(habitFact);
+                habitFactTranslation.setFactOfDayStatus(FactOfDayStatus.POTENTIAL);
+            });
+        }
 
         return modelMapper.map(habitFactRepo.save(habitFact), HabitFactVO.class);
     }
@@ -316,6 +329,11 @@ public class HabitFactServiceImpl implements HabitFactService {
     }
 
     private void habitFactTranslationsSetter(HabitFact habitFact, HabitFactUpdateDto factDto) {
+        if (habitFact.getTranslations() == null || factDto.getTranslations() == null 
+            || factDto.getTranslations().isEmpty()) {
+            return;
+        }
+        
         habitFact.getTranslations()
             .forEach(habitFactTranslation -> {
                 Optional<HabitFactTranslationUpdateDto> content = factDto.getTranslations().stream()
@@ -324,7 +342,11 @@ public class HabitFactServiceImpl implements HabitFactService {
                     .findFirst();
                 content.ifPresent(habitFactTranslationUpdateDto -> habitFactTranslation
                     .setContent(habitFactTranslationUpdateDto.getContent()));
-                habitFactTranslation.setFactOfDayStatus(factDto.getTranslations().get(0).getFactOfDayStatus());
+                
+                // Use the first translation's status, but check it exists first
+                if (!factDto.getTranslations().isEmpty()) {
+                    habitFactTranslation.setFactOfDayStatus(factDto.getTranslations().get(0).getFactOfDayStatus());
+                }
             });
     }
 }

@@ -25,9 +25,9 @@
 
     <properties>
         <spring.boot.version>3.2.2</spring.boot.version>
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <junit-jupiter.version>5.10.2</junit-jupiter.version>
         <mockito-junit-jupiter.version>5.10.0</mockito-junit-jupiter.version>
         <mockito-core.version>5.10.0</mockito-core.version>

@@ -17,9 +17,10 @@ public class HabitFact {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "habitFact", fetch = FetchType.EAGER)
+    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "habitFact", fetch = FetchType.LAZY)
     private List<HabitFactTranslation> translations;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "habit_id")
     private Habit habit;
 }
