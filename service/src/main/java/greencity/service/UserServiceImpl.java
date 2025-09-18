@@ -11,6 +11,7 @@ import greencity.dto.user.UserVO;
 import greencity.entity.User;
 import greencity.enums.Role;
 import greencity.enums.UserStatus;
+import greencity.exception.exceptions.BadRequestException;
 import greencity.exception.exceptions.BadUpdateRequestException;
 import greencity.exception.exceptions.LowRoleLevelException;
 import greencity.exception.exceptions.WrongEmailException;
@@ -183,12 +184,22 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public String getInitialsById(Long userId) {
+        if (userId == null) {
+            throw new WrongIdException("User ID cannot be null");
+        }
+        
         Optional<User> optionalUser = userRepo.findById(userId);
         if (optionalUser.isEmpty()) {
             throw new WrongIdException(ErrorMessage.USER_NOT_FOUND_BY_ID + userId);
         }
         UserVO userVO = modelMapper.map(optionalUser.get(), UserVO.class);
         String name = userVO.getName();
+        
+        if (name == null || name.trim().isEmpty()) {
+            throw new BadRequestException("User name is required for generating initials");
+        }
+        
+        name = name.trim();
         String initials = name.contains(" ") ? String.valueOf(name.charAt(0))
             .concat(String.valueOf(name.charAt(name.indexOf(" ") + 1)))
             : String.valueOf(name.charAt(0));
